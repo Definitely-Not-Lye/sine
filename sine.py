@@ -57,7 +57,7 @@ class MainWindow(QWidget):
         layout = QVBoxLayout()
 
         # Play button
-        self.play_button = QPushButton('Play', self)
+        self.play_button = QPushButton('Start/Stop', self)
         self.play_button.clicked.connect(self.start_or_stop)
         layout.addWidget(self.play_button)
 

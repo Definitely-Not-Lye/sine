@@ -2,7 +2,7 @@ import sys
 import math
 import pygame
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QSlider
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 
 # Initialize pygame audio
 pygame.mixer.init()
@@ -11,7 +11,7 @@ pygame.mixer.init()
 def generate_sine_wave(volume):
     sample_rate = 44100  # Standard audio sample rate
     duration = 1.0  # Duration in seconds
-    frequency = 440  # Frequency of the sine wave (440 Hz)
+    frequency = 1  # Frequency of the sine wave (440 Hz)
     
     num_samples = int(sample_rate * duration)
     max_amplitude = 2 ** 15 - 1  # Maximum amplitude for 16-bit audio
@@ -52,37 +52,59 @@ class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Sine Wave Player")
-        self.setGeometry(100, 100, 300, 200)  # Set window position and size
+        self.setGeometry(100, 100, 400, 50)  # Set window position and size
         
         layout = QVBoxLayout()
 
         # Play button
         self.play_button = QPushButton('Play', self)
-        self.play_button.clicked.connect(play_sine_wave)
+        self.play_button.clicked.connect(self.start_or_stop)
         layout.addWidget(self.play_button)
 
-        # Stop button
-        self.stop_button = QPushButton('Stop', self)
-        self.stop_button.clicked.connect(stop_sine_wave)
-        layout.addWidget(self.stop_button)
 
-        # Volume slider
-        self.volume_label = QLabel('Volume')
-        layout.addWidget(self.volume_label)
 
-        self.volume_slider = QSlider(Qt.Horizontal)
-        self.volume_slider.setMinimum(0)
-        self.volume_slider.setMaximum(100)
-        self.volume_slider.setValue(1)
-        self.volume_slider.valueChanged.connect(self.update_volume)
-        layout.addWidget(self.volume_slider)
+
+
+
+
+        # Status label (running/stopped)
+        self.status_label = QLabel('Stopped')
+        self.status_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.status_label)
 
         self.setLayout(layout)
 
+        # Timer to update status label
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_status_label)
+        self.timer.start(500)  # Update every 500 milliseconds
+
+        # Initial status
+        self.update_status_label()
+
     # Function to update volume based on slider value
     def update_volume(self, value):
-        volume = float(value) / 100.0
+        volume = float(value) / 100.0 * 0.01  # Adjust volume calculation
         sine_wave.set_volume(volume)
+        self.volume_value_label.setText(f'Volume: {volume:.2f}')
+
+    # Function to start or stop sine wave playback
+    def start_or_stop(self):
+        if pygame.mixer.Channel(0).get_busy():
+            stop_sine_wave()
+        else:
+            play_sine_wave()
+
+        self.update_status_label()
+
+    # Function to update the status label based on sine wave playback state
+    def update_status_label(self):
+        if pygame.mixer.Channel(0).get_busy():
+            self.status_label.setText('Running')
+            self.status_label.setStyleSheet('color: green; font-weight: bold;')
+        else:
+            self.status_label.setText('Stopped')
+            self.status_label.setStyleSheet('color: red; font-weight: bold;')
 
     # Override closeEvent to properly quit pygame and application
     def closeEvent(self, event):
